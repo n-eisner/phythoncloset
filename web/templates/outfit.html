@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% load core_extras %}
+
+{% block header_title %}Your outfit, fresh from the closet{% endblock header_title %}
+
+{% block content %}
+{% if no_clothes %}
+<div class="alert alert-block">
+	<h4>Oh no!</h4>
+	<p>You don't have enough articles of clothing to create an outfit yet!</p>
+	<p><a href="/closet" role="button" class="btn" data-toggle="modal">Add more clothes!</a></p>
+</div>
+{% else %}
+{% if not public_link %}
+<h3>Today's Weather</h3>
+<p>Currently {{weather.item.condition.temp}}&deg;{{weather.units.temperature}} and {{weather.item.condition.text}}.  High: {{weather.item.forecast.0.high}}&deg;{{weather.units.temperature}} Low: {{weather.item.forecast.0.low}}&deg;{{weather.units.temperature}} @ {{weather.location.city}}, Philadelphia, {{weather.location.region}}</p>
+<hr>
+{% endif %}
+<div class="form-inline">
+<b>Share your outfit:</b>
+<div class="input-append">
+	<input type="text" value="http://{{hostname}}/outfit/p/{{encoded}}">
+	<span class="add-on"><i class="icon-share"></i></span>
+</div>&nbsp; on &nbsp;
+<a href="https://www.facebook.com/sharer/sharer.php?u=http://{{hostname}}/outfit/p/{{encoded}}&amp;t=Uncloseted just made me another look!" target="_blank" class="btn btn-info">Facebook</a>
+<a href="https://twitter.com/intent/tweet?text=Uncloseted%20just%20made%20me%20another%20look!%20%23convenience%20%23socute%20%23checkitout&amp;url=http://{{hostname}}/outfit/p/{{encoded}}" target="_blank" class="btn btn-primary">Twitter</a>
+</div>
+{% if not public_link %}<hr>Don't like what you see? <a href="/outfit" class="btn btn-warning" class="pull-right">Let me see more options</a>{% endif %}
+<div class="outfit">
+	{% if outfit.tops %}
+	<hr>
+	<div class="row">
+		<p class="vertical span1">Tops</p>
+		{% for article in outfit.tops %}
+		<div class="article span3 well well-small">
+		{% if article %}
+		<a href="#">
+			<img src="{{article.image_url}}">
+			{{article}}
+		</a>
+		{% else %}
+		You seem to be missing a type of clothing! Please make sure you <a href="/closet">add enough to your closet.</a>
+		{% endif %}
+		</div>
+		{% if not forloop.last %}<div class="span plus">+</div>{% endif %}
+		{% endfor %}
+		{% if recommended.bottoms %}
+		<div class="article span3 pull-right well well-small sponsored">
+			<div class="ribbon success">
+				You Might Also Like
+			</div>
+			<a href="{{recommended.bottoms.url}}" target="_blank">
+				<img src="{{recommended.bottoms.image_url}}">
+				{{recommended.bottoms.name}}
+			</a>
+		</div>
+		{% endif %}
+	</div>
+	{% endif %}
+
+	{% if outfit.bottoms %}
+	<div class="row">
+		<p class="vertical span1">Bottoms</p>
+		{% for article in outfit.bottoms %}
+		<div class="article span3 well well-small">
+		{% if article %}
+		<a href="#">
+			<img src="{{article.image_url}}">
+			{{article}}
+		</a>
+		{% else %}
+		You seem to be missing a type of clothing! Please make sure you <a href="/closet">add enough to your closet.</a>
+		{% endif %}
+		</div>
+		{% endfor %}
+		{% if recommended.tops %}
+		<div class="article span3 pull-right well well-small sponsored">
+			<div class="ribbon success">
+				You Might Also Like
+			</div>
+			<a href="{{recommended.tops.url}}" target="_blank">
+				<img src="{{recommended.tops.image_url}}">
+				{{recommended.tops.name}}
+			</a>
+		</div>
+		{% endif %}
+	</div>
+	{% endif %}
+</div>
+{% endif %}
+{% endblock %}

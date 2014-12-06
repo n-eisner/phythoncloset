@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% load core_extras %}
+
+{% block content %}
+<a href="http://uncloseted.rohunbansal.com/" onclick="return close_window();" class="btn btn-primary">Back to my Closet</a>
+<div style="height:300px; overflow-y:scroll">
+{% for catalog in catalogs %}
+	<h2>{{catalog.name}}</h2>
+	<div class="articles">
+		{% for item in catalog.items %}
+			<div class="article well well-small" data-image="{{items|hash:item.id|hash:"imageUrl"}}" data-desc="{{items|hash:item.id|hash:"description"}}">
+				<img src="{{items|hash:item.id|hash:"imageUrl"}}" alt="">
+				<p>{{items|hash:item.id|hash:"description"|truncatechars:100}}</p>
+				<p><a href="#">Add to my Closet</a>
+			</div>
+		{% endfor %}
+	</div>
+{% endfor %}
+</div>
+
+<form id="add_article_filepicker" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="add_article_filepicker_label" aria-hidden="true" action="/closet/add_file?next=/landing?token={{request.GET.token}}" method="POST" accept-charset="utf-8" onsubmit="return check_form()">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		<h3 id="add_article_filepicker_label">Add Article of Clothing</h3>
+	</div>
+	<div class="modal-body">
+		<div class="row">
+			<div class="span1"><img src="/static/img/loading.gif" style="height:100px" id="pending_image"></div>
+			<div class="span2">Colors: <span id="loading_colors"><img src="/static/img/loading.gif"> Processing...</span>
+				<span id="img_colors"></span><br><span id="loaded_colors">Click unwanted colors</span></div>
+		</div>
+		<div class="form-horizontal">
+			{% csrf_token %}
+			<input type="hidden" name="image_url" id="add_file_image_url" value="">
+			<input type="hidden" name="image_colors" id="image_colors" value="">
+			<div class="control-group">
+				<label class="control-label" for="inputTitle">Title</label>
+				<div class="controls">
+					<input type="text" id="title" name="title" placeholder="Title" onblur="search_sub_type()">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="inputDescription">Description</label>
+				<div class="controls">
+					<textarea rows="3" id="description" name="description" placeholder="Description"></textarea>
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="clothing_type">Type</label>
+				<div class="controls">
+					<select name="clothing_type" id="clothing_type">
+						<option value="-1">---</option>
+						{% for article_sub_type in article_sub_types %}
+						<option value="{{article_sub_type.id}}">{{article_sub_type.name}}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		<button type="submit" class="btn btn-primary">Save Article</button>
+	</div>
+</form>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/jquery.masonry.min.js"></script>
+<script type="text/javascript">
+function close_window(){
+	window.top.location.href = "http://uncloseted.rohunbansal.com/closet/";
+	return false;
+}
+function go_to(url){
+	window.top.location.href = url;
+	return false;
+}
+
+function search_sub_type(){
+	var title_text = $('#title').val().toUpperCase();
+	var sub_types_choice = $('#clothing_type');
+	sub_types_choice.children().each(function(i, v){
+		if(title_text.indexOf(v.innerHTML.toUpperCase()) !== -1) {
+			sub_types_choice.val(v.value)
+		}
+	});
+}
+
+function check_form(){
+	if($('#clothing_type').val() == -1){
+		alert('You must specify a clothing type');
+		return false;
+	}
+	var colors = $('#img_colors').children().map(function(i, v){return String($(v).data('color'))}).get().join('|');
+	$('#image_colors').val(colors);
+	return true;
+}
+
+function load_colors(url){
+	$('#loading_colors').show();
+	$('#loaded_colors').hide();
+	$.get("/get_colors", { url: url },
+		function(data){
+			$('#loading_colors').hide();
+			$('#loaded_colors').show();
+			$.each(data['colors'], function(i, v){
+				$("#img_colors").append('<a href="#" class="color_box" style="background-color:' + v + '" data-color="' + v + '">&times;</a>');
+			});
+			$("#img_colors a").click(function(e){
+				e.preventDefault();
+				$(this).remove();
+			})
+		});
+}
+
+$('.article a').click(function(e){
+	e.preventDefault();
+	var image = $(this).parent().parent().data('image');
+	var desc = $(this).parent().parent().data('desc');
+
+	$('#add_file_image_url').val(image);
+	$('#pending_image').attr('src', image);
+     load_colors(image);
+	$('#description').val(desc);
+	$('#add_article_filepicker').modal();
+	console.log(window.location.href)
+});
+
+$(window).load(function(){
+	$('.articles').masonry({
+		itemSelector: '.article',
+		columnWidth: 100
+	});
+});
+</script>
+{% endblock %}

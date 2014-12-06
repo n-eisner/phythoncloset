@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block header_title %}My Closet{% endblock header_title %}
+
+{% block content %}
+<div class="row">
+	<div class="span2">
+		<p style="width:100%; text-align:center">
+			<a href="#add_article" role="button" class="btn btn-success btn-large" data-toggle="modal" style="width:76%"><i class="icon-plus icon-white"></i> Add Clothes</a>
+		</p>
+		<p style="width:100%; text-align:center">
+			<a href="/outfit" role="button" class="btn btn-success btn-large" style="width:76%">Generate Outfit</a>
+		</p>
+		<hr>
+		<ul class="nav nav-list well well-small">
+			<li class="nav-header">Browse Clothes</li>
+			<li{% if not selected_type %} class="active"{% endif %}><a href="/closet">My Clothes</a></li>
+			{% for article_type in article_types %}
+			<li{% if selected_type == article_type%} class="active"{% endif %}><a href="/closet/?type={{article_type.id}}">{{article_type.name}}</a></li>
+			{% endfor %}
+		</ul>
+		<hr>
+	</div>
+	<div class="span10">
+		{% if not articles %}
+		<div class="alert alert-block">
+			<h4>Oh no!</h4>
+			<p>No articles of clothing found!</p>
+			<p><a href="#add_article" role="button" class="btn btn-success" data-toggle="modal"><i class="icon-plus icon-white"></i> Add more clothes!</a></p>
+		</div>
+		{% endif %}
+		<div id="articles">
+			{% for article in articles %}
+				<div class="article well well-small">
+					<img src="{{article.image_url}}" alt="">
+					<h3>{{article.title}}</h3>
+					<p><span class="label">{{article.article_sub_type}}</span> {% for color in article.colors.all %}<span class="color_box" style="background-color:#{{color.hex}}">&nbsp;</span> {% endfor %} {{article.description|truncatechars:100}}</p>
+				</div>
+			{% endfor %}
+		</div>
+	</div>
+</div>
+
+<div id="add_article" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="add_article_label" aria-hidden="true">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		<h3 id="add_article_label">Add Article of Clothing</h3>
+	</div>
+	<div class="modal-body center">
+		<p><a href="#" class="btn btn-primary" id="do_shopping_site_url">From Shopping URL</a></p>
+		<p>&mdash; or &mdash;</p>
+		<p><a href="#" class="btn btn-primary" id="add_file_button">Upload Picture using FilePicker.io</a></p>
+		<p>&mdash; or &mdash;</p>
+		<p><a href="http://galileo.shopyourway.com/app/11662/login" class="btn btn-primary">From Shop Your Way</a></p>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+	</div>
+</div>
+
+<div id="input_url" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="input_url_label" aria-hidden="true">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		<h3 id="input_url_label">Input Shopping Site URL</h3>
+	</div>
+	<div class="modal-body center">
+		<div class="form-horizontal">
+			<div class="control-group">
+				<label class="control-label" for="shopping_url">URL</label>
+				<div class="controls">
+					<input type="text" id="shopping_url" name="shopping_url" placeholder="Shopping Site URL">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		<button class="btn btn-primary" id="do_use_url">Use URL</button>
+	</div>
+</div>
+
+<form id="add_article_filepicker" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="add_article_filepicker_label" aria-hidden="true" action="/closet/add_file" method="POST" accept-charset="utf-8" onsubmit="return check_form();">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+		<h3 id="add_article_filepicker_label">Add Article of Clothing</h3>
+	</div>
+	<div class="modal-body">
+		<div class="row">
+			<div class="span1"><img src="/static/img/loading.gif" style="height:100px" id="pending_image"></div>
+			<div class="span2">Colors: <span id="loading_colors"><img src="/static/img/loading.gif"> Processing...</span>
+				<span id="img_colors"></span><br><span id="loaded_colors">Click unwanted colors</span></div>
+		</div>
+		<div class="form-horizontal">
+			{% csrf_token %}
+			<input type="hidden" name="image_url" id="add_file_image_url" value="">
+			<input type="hidden" name="image_colors" id="image_colors" value="">
+			<div class="control-group">
+				<label class="control-label" for="inputTitle">Title</label>
+				<div class="controls">
+					<input type="text" id="title" name="title" placeholder="Title" onblur="search_sub_type()">
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="inputDescription">Description</label>
+				<div class="controls">
+					<textarea rows="3" id="description" name="description" placeholder="Description"></textarea>
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="clothing_type">Type</label>
+				<div class="controls">
+					<select name="clothing_type" id="clothing_type">
+						<option value="-1">---</option>
+						{% for article_sub_type in article_sub_types %}
+						<option value="{{article_sub_type.id}}">{{article_sub_type.name}}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+		<button type="submit" class="btn btn-primary">Save Article</button>
+	</div>
+</form>
+{% endblock %}
+
+{% block js %}
+<script src="/static/js/jquery.masonry.min.js"></script>
+<script type="text/javascript" src="//api.filepicker.io/v1/filepicker.js"></script>
+<script>
+filepicker.setKey("AQTGFgGfmSXeFZJ4JikHWz");
+
+function search_sub_type(){
+	var title_text = $('#title').val().toUpperCase();
+	var sub_types_choice = $('#clothing_type');
+	sub_types_choice.children().each(function(i, v){
+		if(title_text.indexOf(v.innerHTML.toUpperCase()) !== -1) {
+			sub_types_choice.val(v.value)
+		}
+	});
+}
+
+function load_colors(url){
+	$('#loading_colors').show();
+	$('#loaded_colors').hide();
+	$.get("/get_colors", { url: url },
+		function(data){
+			$('#loading_colors').hide();
+			$('#loaded_colors').show();
+			$("#img_colors").empty();
+			$.each(data['colors'], function(i, v){
+				$("#img_colors").append('<a href="#" class="color_box" style="background-color:' + v + '" data-color="' + v + '">&times;</a>');
+			});
+			$("#img_colors a").click(function(e){
+				e.preventDefault();
+				$(this).remove();
+			})
+		});
+}
+
+function check_form(){
+	if($('#clothing_type').val() == -1){
+		alert('You must specify a clothing type');
+		return false;
+	}
+	var colors = $('#img_colors').children().map(function(i, v){return String($(v).data('color'))}).get().join('|');
+	$('#image_colors').val(colors);
+	return true;
+}
+
+$('#do_shopping_site_url').click(function(e){
+	e.preventDefault();
+	$('#add_article').modal('hide');
+	$('#input_url').modal();
+});
+
+$('#do_use_url').click(function(e){
+	e.preventDefault();
+	$.get("/scrape_url", { url: $('#shopping_url').val() },
+	   function(data){
+	   	if(data['status'] == 'error'){
+	   		alert('error! try another url')
+	   	} else {
+		     console.log("Data Loaded: " + data);
+		     $('#title').val(data['title']);
+		     $('#description').val(data['description']);
+		     $('#add_file_image_url').val(data['image_url']);
+		     $('#pending_image').attr('src', data['image_url']);
+		     load_colors(data['image_url']);
+		     search_sub_type();
+
+		     $('#input_url').modal('hide');
+		     $('#add_article_filepicker').modal();
+	     }
+	   });
+});
+
+$('#add_file_button').click(function(e){
+	e.preventDefault();
+	filepicker.pick({
+		mimetypes: ['image/*'],
+	},
+	function(FPFile){
+		console.log(JSON.stringify(FPFile));
+		$('#add_file_image_url').val(FPFile.url);
+		$('#pending_image').attr('src', FPFile.url);
+		load_colors(FPFile.url);
+
+		$('#add_article').modal('hide');
+		$('#add_article_filepicker').modal();
+	},
+	function(FPError){
+		console.log(FPError.toString());
+	}
+	);
+});
+
+$(window).load(function(){
+	$('#articles').masonry({
+		itemSelector: '.article',
+		columnWidth: 100
+	});
+})
+</script>
+{% endblock js %}

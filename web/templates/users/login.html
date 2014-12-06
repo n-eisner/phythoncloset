@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block header_title %}Login{% endblock header_title %}
+
+{% block content %}
+<div class="row">
+	<div class="span6 offset3">
+		{% if form.errors %}
+		<div class="alert alert-error">
+		Your email and password didn't match. Please try again.
+		</div>
+		{% endif %}
+
+		<form class="form-horizontal" method="post" action="">
+			{% csrf_token %}
+			<input type="hidden" name="next" value="{{ next }}" />
+			<div class="control-group">
+				<label class="control-label" for="id_username">Username</label>
+				<div class="controls">
+					{{ form.username }}
+				</div>
+			</div>
+			<div class="control-group">
+				<label class="control-label" for="id_password">Password</label>
+				<div class="controls">
+					{{ form.password }}
+				</div>
+			</div>
+			<div class="control-group">
+				<div class="controls">
+					<button type="submit" class="btn btn-primary">Login</button> &nbsp;<a href="/login/forgot">Forgot your password?</a>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+{% endblock content %}
+
+{% block js %}
+<script> $(function(){ $('#id_username').focus(); }); </script>
+{% endblock js %}
